@@ -1,0 +1,15 @@
+node_modules/
+dist/
+packages/server/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+.vite/
+coverage/
+.claude

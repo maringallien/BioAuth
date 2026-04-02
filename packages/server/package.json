@@ -1,0 +1,38 @@
+{
+  "name": "@biometric-showcase/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "build": "echo \"No build step required for plain JavaScript\"",
+    "start": "node src/index.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "^13.1.1",
+    "better-sqlite3": "^9.4.3",
+    "connect-sqlite3": "^0.9.14",
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "express-rate-limit": "^7.2.0",
+    "express-session": "^1.18.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}
