@@ -3,25 +3,30 @@ import supertest from 'supertest';
 import express from 'express';
 import session from 'express-session';
 
+// Mock user service
 jest.unstable_mockModule('../../services/user.service.js', () => ({
   getUserProfile: jest.fn(),
   removeCredential: jest.fn(),
 }));
 
+// Mock rate limiters with functions that just call next()
 jest.unstable_mockModule('../../middleware/rate-limiter.js', () => ({
   authLimiter: (_req, _res, next) => next(),
   generalLimiter: (_req, _res, next) => next(),
 }));
 
+// Import mocked functions to configure their return values in each test
 const { getUserProfile, removeCredential } = await import('../../services/user.service.js');
 const { default: userRouter } = await import('../../routes/user.routes.js');
 const { errorHandler, AppError } = await import('../../middleware/error-handler.js');
 
+// Create fake user profile
 const PROFILE = {
   user: { id: 'user-1', username: 'alice', createdAt: '2024-01-01' },
   credentials: [],
 };
 
+// Build minimal express app to test user routes
 function buildApp({ userId } = {}) {
   const app = express();
   app.use(express.json());

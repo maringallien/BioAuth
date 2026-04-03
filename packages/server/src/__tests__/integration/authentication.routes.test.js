@@ -3,21 +3,25 @@ import supertest from 'supertest';
 import express from 'express';
 import session from 'express-session';
 
+// Mock authentication service
 jest.unstable_mockModule('../../services/authentication.service.js', () => ({
   getAuthenticationOptions: jest.fn(),
   verifyAuthenticationResponse: jest.fn(),
 }));
 
+// Mock rate limiters with functions that just call next()
 jest.unstable_mockModule('../../middleware/rate-limiter.js', () => ({
   authLimiter: (_req, _res, next) => next(),
   generalLimiter: (_req, _res, next) => next(),
 }));
 
+// Import mocked functions to configure their return values in each test
 const { getAuthenticationOptions, verifyAuthenticationResponse } =
   await import('../../services/authentication.service.js');
 const { default: authRouter } = await import('../../routes/authentication.routes.js');
 const { errorHandler } = await import('../../middleware/error-handler.js');
 
+// Build minimal express app to test auth routes
 function buildApp() {
   const app = express();
   app.use(express.json());
@@ -27,7 +31,9 @@ function buildApp() {
   return app;
 }
 
+// Fake WebAuthn options object
 const FAKE_OPTIONS = { challenge: 'auth-challenge', rpId: 'localhost' };
+// Fake browser response that matches ZOD validation schema
 const VALID_AUTH_BODY = {
   id: 'cred-id',
   rawId: 'cred-raw-id',
@@ -44,7 +50,7 @@ beforeEach(() => {
 });
 
 describe('POST /api/authentication/options', () => {
-  // Named login with a username should return a challenge scoped to that user's keys
+  // When user provides username, server should return challenge their registered passkeys can sign
   it('returns 200 with challenge options when username is provided', async () => {
     getAuthenticationOptions.mockResolvedValue({ options: FAKE_OPTIONS, userId: 'user-1' });
 
@@ -57,7 +63,7 @@ describe('POST /api/authentication/options', () => {
     expect(getAuthenticationOptions).toHaveBeenCalledWith('alice');
   });
 
-  // Discoverable login sends no username and the server should handle that gracefully
+  // Discoverable login sends no username and the server should still return valid challenge
   it('returns 200 without username (discoverable credential flow)', async () => {
     getAuthenticationOptions.mockResolvedValue({ options: FAKE_OPTIONS, userId: null });
 
@@ -71,7 +77,7 @@ describe('POST /api/authentication/options', () => {
 });
 
 describe('POST /api/authentication/verify', () => {
-  // Calling verify before options means the session has no challenge — must be rejected
+  // Calling verify before options means the session has no challenge, and must be rejected
   it('returns 400 when there is no active challenge in session', async () => {
     const res = await supertest(buildApp())
       .post('/api/authentication/verify')
@@ -81,7 +87,7 @@ describe('POST /api/authentication/verify', () => {
     expect(res.body.error).toMatch(/no active authentication challenge/i);
   });
 
-  // Full happy path — options first, then verify with the browser's assertion response
+  // Normal flow: options first, then verify with the browser's assertion response
   it('returns 200 with verified:true after successful authentication', async () => {
     getAuthenticationOptions.mockResolvedValue({ options: FAKE_OPTIONS, userId: 'user-1' });
     verifyAuthenticationResponse.mockResolvedValue({ userId: 'user-1' });

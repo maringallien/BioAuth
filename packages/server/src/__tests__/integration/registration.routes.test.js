@@ -3,21 +3,25 @@ import supertest from 'supertest';
 import express from 'express';
 import session from 'express-session';
 
+// Mock registration service
 jest.unstable_mockModule('../../services/registration.service.js', () => ({
   getRegistrationOptions: jest.fn(),
   verifyRegistrationResponse: jest.fn(),
 }));
 
+// Mock rate limiters with functions that just call next()
 jest.unstable_mockModule('../../middleware/rate-limiter.js', () => ({
   authLimiter: (_req, _res, next) => next(),
   generalLimiter: (_req, _res, next) => next(),
 }));
 
+// Import mocked functions to configure their return values in each test
 const { getRegistrationOptions, verifyRegistrationResponse } =
   await import('../../services/registration.service.js');
 const { default: registrationRouter } = await import('../../routes/registration.routes.js');
 const { errorHandler } = await import('../../middleware/error-handler.js');
 
+// Build minimal express app to test registration routes
 function buildApp() {
   const app = express();
   app.use(express.json());
@@ -27,7 +31,9 @@ function buildApp() {
   return app;
 }
 
+// Fake WebAuthn options object
 const FAKE_OPTIONS = { challenge: 'test-challenge', rpId: 'localhost', allowCredentials: [] };
+// Fake browser response that matches ZOD validation schema
 const VALID_REG_BODY = {
   id: 'cred-id',
   rawId: 'cred-raw-id',
@@ -64,7 +70,7 @@ describe('POST /api/registration/options', () => {
     expect(getRegistrationOptions).not.toHaveBeenCalled();
   });
 
-  // Sending an empty body should also fail validation before hitting the service
+  // Sending an empty body should also fail validation 
   it('returns 400 when username is missing', async () => {
     const res = await supertest(buildApp())
       .post('/api/registration/options')
@@ -75,7 +81,7 @@ describe('POST /api/registration/options', () => {
 });
 
 describe('POST /api/registration/verify', () => {
-  // Hitting verify before options means there's no challenge in the session — should be blocked
+  // Return 400 when there is no challenge in the session
   it('returns 400 when there is no active challenge in session', async () => {
     const res = await supertest(buildApp())
       .post('/api/registration/verify')
@@ -86,7 +92,7 @@ describe('POST /api/registration/verify', () => {
     expect(verifyRegistrationResponse).not.toHaveBeenCalled();
   });
 
-  // Full happy path — get options first so the session has a challenge, then verify
+  // Test correct path works:get options first so the session has a challenge, then verify
   it('returns 200 with verified result after options are obtained', async () => {
     getRegistrationOptions.mockResolvedValue({ options: FAKE_OPTIONS, userId: 'user-1' });
     verifyRegistrationResponse.mockResolvedValue({ verified: true });
