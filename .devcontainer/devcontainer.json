@@ -1,0 +1,29 @@
+{
+  "name": "BioAuth",
+  "build": { "dockerfile": "Dockerfile" },
+  "mounts": [
+    "source=biometric-login-showcase-node-modules-root,target=/workspaces/BioAuth/node_modules,type=volume",
+    "source=biometric-login-showcase-node-modules-server,target=/workspaces/BioAuth/packages/server/node_modules,type=volume",
+    "source=biometric-login-showcase-node-modules-client,target=/workspaces/BioAuth/packages/client/node_modules,type=volume"
+  ],
+  "portsAttributes": {
+    "5173": {
+      "protocol": "https",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "sudo chown -R node:node node_modules packages/server/node_modules packages/client/node_modules && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}
